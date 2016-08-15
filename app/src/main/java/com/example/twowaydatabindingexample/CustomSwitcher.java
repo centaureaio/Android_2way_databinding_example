@@ -4,6 +4,7 @@ import android.databinding.BindingAdapter;
 import android.databinding.InverseBindingListener;
 import android.databinding.InverseBindingMethod;
 import android.databinding.InverseBindingMethods;
+import android.databinding.Observable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.LinearLayout;
@@ -13,7 +14,6 @@ import com.example.twowaydatabindingexample.databinding.CustomSwitcherBinding;
 @InverseBindingMethods({
         @InverseBindingMethod(type = CustomSwitcher.class, attribute = "vm")
 })
-
 public class CustomSwitcher extends LinearLayout {
 
     public interface OnValueChanged{
@@ -27,6 +27,14 @@ public class CustomSwitcher extends LinearLayout {
     public CustomSwitcher(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.binding = CustomSwitcherBinding.inflate(LayoutInflater.from(context), this, true);
+        this.binding.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable sender, int propertyId) {
+                if (propertyId == BR.item) {
+                    setVm(binding.getItem());
+                }
+            }
+        });
     }
 
     public void setOnValChanged(OnValueChanged listener){
@@ -38,8 +46,13 @@ public class CustomSwitcher extends LinearLayout {
     }
 
     public void setVm(boolean vmVal){
-        this.vm = vmVal;
-        this.binding.setItem(vm);
+        if (vmVal != this.vm) {
+            this.vm = vmVal;
+            this.binding.setItem(vm);
+            if (this.onValChanged != null) {
+                this.onValChanged.onValChanged(this, vmVal);
+            }
+        }
     }
 
     @BindingAdapter("vmAttrChanged")
